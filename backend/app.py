@@ -18,7 +18,7 @@ tokenizer = model_bundle['tokenizer']
 label_encoder = model_bundle['label_encoder']
 max_len = model_bundle['max_len']
 
-# Preprocessing function (same as in original code)
+# Preprocessing function
 def clean_text(text):
     if not isinstance(text, str):
         return ""
@@ -31,7 +31,7 @@ def clean_text(text):
     text = re.sub(r'\w*\d\w*', '', text)
     return text
 
-# Prediction function (same logic as in original code)
+# Prediction function
 def predict_emotion(text):
     paragraph_clean = clean_text(text)
     sequence = tokenizer.texts_to_sequences([paragraph_clean])
