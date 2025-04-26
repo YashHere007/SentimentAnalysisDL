@@ -12,7 +12,7 @@ async function predictEmotion() {
     }
 
     try {
-        const response = await fetch('https://sentimentanalysisdl.onrender.com/api/predict', {
+        const response = await fetch('https://sentimentanalysisdl-1.onrender.com/api/predict', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

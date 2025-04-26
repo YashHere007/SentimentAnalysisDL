@@ -7,16 +7,24 @@ import string
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend communication
+CORS(app, resources={r"/api/*": {"origins": "*"}})  # Adjust origins for production
+
+# Health check endpoint for Render
+@app.route('/', methods=['GET', 'HEAD'])
+def health_check():
+    return jsonify({'status': 'healthy'}), 200
 
 # Load the model bundle
-with open('sentiment_model_bundle.pkl', 'rb') as f:
-    model_bundle = pickle.load(f)
-
-model = model_bundle['model']
-tokenizer = model_bundle['tokenizer']
-label_encoder = model_bundle['label_encoder']
-max_len = model_bundle['max_len']
+try:
+    with open('sentiment_model_bundle.pkl', 'rb') as f:
+        model_bundle = pickle.load(f)
+    model = model_bundle['model']
+    tokenizer = model_bundle['tokenizer']
+    label_encoder = model_bundle['label_encoder']
+    max_len = model_bundle['max_len']
+except Exception as e:
+    print(f"Error loading model: {e}")
+    raise
 
 # Preprocessing function
 def clean_text(text):
@@ -63,8 +71,11 @@ def predict():
     if not text:
         return jsonify({'error': 'No text provided'}), 400
 
-    emotion = predict_emotion(text)
-    return jsonify({'emotion': emotion})
+    try:
+        emotion = predict_emotion(text)
+        return jsonify({'emotion': emotion})
+    except Exception as e:
+        return jsonify({'error': f'Prediction failed: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
