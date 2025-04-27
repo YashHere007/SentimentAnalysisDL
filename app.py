@@ -1,20 +1,31 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import pickle
 import numpy as np
 import re
 import string
 from tensorflow.keras.preprocessing.sequence import pad_sequences
+import os
 
-app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})  # Adjust origins for production
+app = Flask(__name__, static_folder='static')
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# Health check endpoint for Render
-@app.route('/', methods=['GET', 'HEAD'])
+# Health check
+@app.route('/health', methods=['GET', 'HEAD'])
 def health_check():
     return jsonify({'status': 'healthy'}), 200
 
-# Load the model bundle
+# Serve the frontend
+@app.route('/')
+def serve_frontend():
+    return send_from_directory(app.static_folder, 'index.html')
+
+# Serve other static files (css, js)
+@app.route('/<path:path>')
+def serve_static_files(path):
+    return send_from_directory(app.static_folder, path)
+
+# Load model
 try:
     with open('sentiment_model_bundle.pkl', 'rb') as f:
         model_bundle = pickle.load(f)
@@ -26,7 +37,7 @@ except Exception as e:
     print(f"Error loading model: {e}")
     raise
 
-# Preprocessing function
+# Clean text
 def clean_text(text):
     if not isinstance(text, str):
         return ""
@@ -39,7 +50,7 @@ def clean_text(text):
     text = re.sub(r'\w*\d\w*', '', text)
     return text
 
-# Prediction function
+# Predict emotion
 def predict_emotion(text):
     paragraph_clean = clean_text(text)
     sequence = tokenizer.texts_to_sequences([paragraph_clean])
@@ -64,6 +75,7 @@ def predict_emotion(text):
     else:
         return "Normal"
 
+# API route
 @app.route('/api/predict', methods=['POST'])
 def predict():
     data = request.get_json()
